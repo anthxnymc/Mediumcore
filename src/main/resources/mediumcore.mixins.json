@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.github.alexmodguy.mediumcore.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "DedicatedServerPropertiesMixin",
+    "ItemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "GuiMixin",
+    "client.CreateWorldScreenMixin",
+    "client.SelectedGameModeMixin"
+  ]
+}
