@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import toni.lib.VersionUtils;
 
 
 @Mixin(Item.class)
@@ -26,7 +27,7 @@ public class ItemMixin
         if (!(livingEntity instanceof Player player) || level.isClientSide())
             return;
 
-        if (stack.is(MediumcoreTags.RESTORES_MAX_HEALTH) && GameRuleRegistry.isMediumCoreMode(player.level().getGameRules())) {
+        if (stack.is(MediumcoreTags.RESTORES_MAX_HEALTH) && GameRuleRegistry.isMediumCoreMode(VersionUtils.level(player).getGameRules())) {
             MediumCoreData.PlayerData data = MediumCoreData.getPlayerData(player);
             double clampedHealth = Mth.clamp(player.getMaxHealth() + Mediumcore.CONFIG.healthIncreasePerHeal.get(), Mediumcore.CONFIG.minimumPlayerHealth.get(), Mediumcore.CONFIG.maxPlayerHealth.get());
             data.healthModifiedBy += (clampedHealth - player.getMaxHealth());

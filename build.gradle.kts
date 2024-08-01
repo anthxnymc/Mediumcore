@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.incremental.createDirectory
+
 plugins {
 	`maven-publish`
 	kotlin("jvm")
@@ -61,7 +63,10 @@ dependencies {
 		modImplementation("net.fabricmc.fabric-api:fabric-api:${property("deps.fapi")}")
 		modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
 
-		modApi("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${property("deps.forgeconfigapi")}")
+		if (mcVersion == "1.19.2")
+			modApi("net.minecraftforge:forgeconfigapiport-fabric:${property("deps.forgeconfigapi")}")
+		else
+			modApi("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${property("deps.forgeconfigapi")}")
 	} else {
 		if (loader == "forge") {
 			"forge"("net.minecraftforge:forge:${mcVersion}-${property("deps.fml")}")
@@ -106,9 +111,19 @@ tasks.withType<JavaCompile>() {
 	options.compilerArgs.add("-Xplugin:Manifold")
 	// modify the JavaCompile task and inject our auto-generated Manifold symbols
 	if(!this.name.startsWith("_")) { // check the name, so we don't inject into Forge internal compilation
-		setupManifoldPreprocessors(options.compilerArgs, isFabric, projectDir, mcVersion)
+		setupManifoldPreprocessors(options.compilerArgs, isFabric, projectDir, mcVersion, false)
 	}
 }
+
+project.tasks.register("setupManifoldPreprocessors") {
+	setupManifoldPreprocessors(ArrayList(), isFabric, projectDir, mcVersion, true)
+}
+
+tasks.setupChiseledBuild {
+	finalizedBy("setupManifoldPreprocessors")
+}
+
+
 
 val buildAndCollect = tasks.register<Copy>("buildAndCollect") {
 	group = "build"
@@ -205,16 +220,6 @@ publishMods {
 }
 
 publishing {
-	repositories {
-		maven("https://maven.kikugie.dev/releases") {
-			name = "kikugieMaven"
-			credentials(PasswordCredentials::class.java)
-			authentication {
-				create<BasicAuthentication>("basic")
-			}
-		}
-	}
-
 	publications {
 		create<MavenPublication>("mavenJava") {
 			groupId = "${property("mod.group")}.${mod.id}"
@@ -226,7 +231,7 @@ publishing {
 	}
 }
 
-fun setupManifoldPreprocessors(compilerArgs: MutableList<String>?, isFabric: Boolean, parent: File, mcString : String) {
+fun setupManifoldPreprocessors(compilerArgs: MutableList<String>?, isFabric: Boolean, parent: File, mcString : String, clearMainProject : Boolean) {
 	val mcVers = listOf("1.18.2", "1.19.2", "1.20.1", "1.21")
 	val mcIndex = mcVers.indexOf(mcString);
 
@@ -250,6 +255,8 @@ fun setupManifoldPreprocessors(compilerArgs: MutableList<String>?, isFabric: Boo
 	}
 
 	File(parent, "build.properties").writeText(sb.toString())
+	File(parent, "build/chiseledSrc").createDirectory()
+	File(parent, "build/chiseledSrc/build.properties").writeText(sb.toString())
 
 	// if the project we're currently processing annotations for happens to be the
 	// main project, we need to also copy the build.properties to the root folder
@@ -258,4 +265,7 @@ fun setupManifoldPreprocessors(compilerArgs: MutableList<String>?, isFabric: Boo
 
 	if (stonecutter.active.project == stonecutter.current.project)
 		File(parent, "../../src/main/build.properties").writeText(sb.toString())
+
+	if (clearMainProject)
+		File(parent, "../../src/main/build.properties").delete()
 }

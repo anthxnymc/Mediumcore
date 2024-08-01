@@ -1,14 +1,22 @@
 package com.github.alexmodguy.mediumcore.mixins;
 
 import com.github.alexmodguy.mediumcore.Mediumcore;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+#if AFTER_20_1
+import net.minecraft.client.gui.GuiGraphics;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+#else
+import net.minecraft.client.gui.GuiComponent;
+#endif
 
 #if AFTER_21
 @Mixin(Gui.HeartType.class)
@@ -35,18 +43,27 @@ public class GuiMixin
             cir.setReturnValue(blinking ? this.mediumcore$FullBlinking : mediumcore$Full);
         }
     }
-    #else
-
-    @Unique
-    private static final ResourceLocation MEDIUMCORE_HEARTS_TEXTURE = new ResourceLocation("mediumcore:textures/gui/icons.png");
-
+    #elif AFTER_20_1
     @Inject(at = @At("HEAD"), method = "renderHeart", cancellable = true)
     public void getSpriteMediumcore(GuiGraphics guiGraphics, Gui.HeartType heartType, int i, int j, int k, boolean bl, boolean bl2, CallbackInfo ci)
     {
         if (!Mediumcore.clientActive || heartType != Gui.HeartType.NORMAL)
             return;
 
-        guiGraphics.blit(MEDIUMCORE_HEARTS_TEXTURE, i, j, heartType.getX(bl2, bl), k, 9, 9);
+        guiGraphics.blit(Mediumcore.MEDIUMCORE_HEARTS_TEXTURE, i, j, heartType.getX(bl2, bl), k, 9, 9);
+        ci.cancel();
+    }
+
+    #else
+    @Inject(at = @At("HEAD"), method = "renderHeart", cancellable = true)
+    public void getSpriteMediumcore(PoseStack poseStack, Gui.HeartType heartType, int i, int j, int k, boolean bl, boolean bl2, CallbackInfo ci)
+    {
+        if (!Mediumcore.clientActive || heartType != Gui.HeartType.NORMAL)
+            return;
+        RenderSystem.setShaderTexture(0, Mediumcore.MEDIUMCORE_HEARTS_TEXTURE);
+        ((Gui)(Object) this).blit(poseStack, i, j, heartType.getX(bl2, bl), k, 9, 9);
+        RenderSystem.setShaderTexture(0, GuiComponent.GUI_ICONS_LOCATION);
+
         ci.cancel();
     }
     #endif

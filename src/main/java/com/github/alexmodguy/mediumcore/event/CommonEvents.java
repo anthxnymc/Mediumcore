@@ -40,8 +40,8 @@ public class CommonEvents {
         });
 
         ServerPlayerEvents.AFTER_RESPAWN.register((ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) -> {
-            if (!alive && !newPlayer.level().isClientSide) {
-                if (GameRuleRegistry.isMediumCoreMode(newPlayer.level().getGameRules())) {
+            if (!alive && !VersionUtils.level(newPlayer).isClientSide) {
+                if (GameRuleRegistry.isMediumCoreMode(VersionUtils.level(newPlayer).getGameRules())) {
                     double healthModifiedBy = MediumCoreData.getPlayerData(newPlayer).healthModifiedBy;
                     updateHealth(newPlayer, healthModifiedBy);
                 }
@@ -66,7 +66,7 @@ public class CommonEvents {
             if (!(entity instanceof Player player))
                 return;
 
-            if (!GameRuleRegistry.isMediumCoreMode(player.level().getGameRules()))
+            if (!GameRuleRegistry.isMediumCoreMode(VersionUtils.level(player).getGameRules()))
                 return;
 
             MediumCoreData.PlayerData data = MediumCoreData.getPlayerData(player);
